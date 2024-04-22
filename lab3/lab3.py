@@ -1,11 +1,11 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import torch
 import torch.nn as nn
 import torch.optim
-from torch.utils.data import DataLoader, ConcatDataset
-from sklearn.model_selection import KFold, cross_val_score
+from sklearn.model_selection import KFold
 
 
 # MLP = multilayer perceptron
@@ -55,7 +55,7 @@ class MLP(nn.Module):
 
             print(loss.item())
         
-    def train_kfold(self, xs, ys, epochs = 1000, splits = 2, batch = 10):
+    def train_kfold(self, xs, ys, epochs = 100, splits = 2, batch = 10):
         xx = torch.from_numpy(xs).type(torch.FloatTensor)
         yy = torch.tensor(ys).type(torch.FloatTensor)
 
@@ -63,15 +63,15 @@ class MLP(nn.Module):
 
         results = {}
 
-        # what is shuffle
+        # shuffle = перетасовка
         kfold = KFold(n_splits=splits, shuffle=True)
 
         print('--------------------------------')
 
         for fold, (train_idxs, test_idxs) in enumerate(kfold.split(dataset)):
 
-            print(f'FOLD {fold}')
-            print('--------------------------------')
+            # print(f'FOLD {fold}')
+            # print('--------------------------------')
 
             # Sample elements randomly from a given list of ids, no replacement.
             train_subsampler = torch.utils.data.SubsetRandomSampler(train_idxs)
@@ -113,18 +113,11 @@ class MLP(nn.Module):
                     # Perform optimization
                     self.optimizer.step()
                     
-                    # Print statistics
-                    current_loss += loss.item()
-                    if i % 500 == 499:
-                        print('Loss after mini-batch %5d: %.3f' %
-                            (i + 1, current_loss / 500))
-                        current_loss = 0.0
-                    
-            print('Training process has finished. Saving trained model.')
-            print('Starting testing')
+            # print('Training process has finished. Saving trained model.')
+            # print('Starting testing')
             
             # Saving the model
-            save_path = f'./model-fold-{fold}.pth'
+            save_path = f'models/model-fold-{fold+1}.pth'
             torch.save(self.state_dict(), save_path)
 
             # Evaluationfor this fold
@@ -146,20 +139,31 @@ class MLP(nn.Module):
                     correct += (predicted == targets).sum().item()
 
                 # Print accuracy
-                print('Accuracy for fold %d: %d %%' % (fold, 100.0 * correct / total))
-                print('--------------------------------')
+                # print('Accuracy for fold %d: %d %%' % (fold+1, 100.0 * correct / total))
+                # print('--------------------------------')
                 results[fold] = 100.0 * (correct / total)
             
         # Print fold results
         print(f'K-FOLD CROSS VALIDATION RESULTS')
         print('--------------------------------')
+        max = 0
+        max_accuracity_id = 0
         sum = 0.0
         for key, value in results.items():
             print(f'Fold {key + 1}: {value} %')
             sum += value
+            if (value >= max):
+                max = value
+                max_accuracity_id = key
+
         print(f'Average: {sum/len(results.items())} %')
 
-        # load the best model
+        PATH = "models/model-fold-" + str(max_accuracity_id + 1) + ".pth"
+
+        # Load the most accurate model
+        self.load_state_dict(torch.load(PATH))
+        self.eval()
+
               
 
     def predict(self, xs):
@@ -313,10 +317,11 @@ def spirals():
 
 #----------------------------------------Генерация-выборок---------------------------------------#
 
+matplotlib.use('TkAgg')
 
 print("Выборка: 1 - кольцо и кластер  2 - квадраты  3 - кучки  4 - спирали")
 # xs_choice = str(input())
-xs_choice = '2'
+xs_choice = '1'
 
 if xs_choice == '1':
     ring_cluster()
@@ -333,12 +338,12 @@ else:
 # слоев от 2 до 4
 # нейронов от 1 до 5
 
-mlp = MLP(2, 3,'relu')
+mlp = MLP(2, 3,'sigmoid')
 
 xs = xs[0]
 ys = ys[0]
 
-mlp.train_kfold(xs, ys, epochs = 100, splits=3)
+mlp.train_kfold(xs, ys, epochs = 1000, splits=3)
 
 plt.show()
 
