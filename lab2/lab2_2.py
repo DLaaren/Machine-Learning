@@ -200,6 +200,9 @@ else:
 xs = xs[0]
 ys = ys[0]
 
+print(xs)
+quit()
+
 ensemble.train(xs, ys)
 # print(xs[0])
 # print(len(xs))
