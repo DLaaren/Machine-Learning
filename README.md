@@ -1,4 +1,4 @@
-# Machine-Learning
+# NSU-Machine-Learning
 
 3 курс
 
